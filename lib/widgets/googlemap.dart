@@ -46,28 +46,41 @@ class _googlemapwidgetState extends State<googlemapwidget> {
   }
 
   Future<Uint8List> function(String image, int width) async {
-    var imageByteData = await rootBundle.load(image);
-    var imagecodec = await ui.instantiateImageCodec(
-      imageByteData.buffer.asUint8List(),
+    final imagebytedata = await rootBundle.load(image);
+    final imageunit8list = imagebytedata.buffer.asUint8List();
+    final imagecodec = await ui.instantiateImageCodec(
+      imageunit8list,
       targetWidth: width,
     );
-    var imageInfo = await imagecodec.getNextFrame();
-    var byteData = await imageInfo.image.toByteData(
+    final imageframe = await imagecodec.getNextFrame();
+    final imagebyte = await imageframe.image.toByteData(
       format: ui.ImageByteFormat.png,
     );
-    var pngBytes = byteData!.buffer.asUint8List();
-    return pngBytes;
+    return imagebyte!.buffer.asUint8List();
   }
 
   Widget build(BuildContext context) {
     return Stack(
       children: [
         GoogleMap(
+          mapType: MapType.normal,
+          circles: {
+            Circle(
+              fillColor: Colors.blueAccent.withOpacity(0.3),
+
+              strokeColor: Colors.blueAccent,
+              strokeWidth: 2,
+              radius: 100,
+              center: LatLng(30.602058784166292, 32.260417069270844),
+              circleId: CircleId('1'),
+            ),
+          },
+          zoomControlsEnabled: false,
           markers: markers,
           // mapType: MapType.hybrid,
           onMapCreated: (controller) {
             mapController = controller;
-            initstyle();
+            // initstyle();
           },
           initialCameraPosition: CameraPosition(
             target: LatLng(30.602058784166292, 32.260417069270844),
