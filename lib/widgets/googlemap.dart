@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 
 class googlemapwidget extends StatefulWidget {
   const googlemapwidget({super.key});
@@ -15,33 +16,36 @@ class _googlemapwidgetState extends State<googlemapwidget> {
   late GoogleMapController mapController;
   Uint8List image = Uint8List(0);
   Set<Marker> markers = {};
+  late Location location;
   @override
   void initstyle() async {
     String mapstyle = await DefaultAssetBundle.of(
       context,
     ).loadString('assets/map_styles/WYstyle.json');
-    mapController.setMapStyle(mapstyle);
-    image = await function("assets/images/marker.png", 40);
-    markers = {
-      Marker(
-        infoWindow: InfoWindow(title: "hello id", snippet: "hello world"),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
-        markerId: MarkerId('1'),
-        position: LatLng(30.602058784166292, 32.260417069270844),
-      ),
-      Marker(
-        infoWindow: InfoWindow(title: "hello id", snippet: "hello world"),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
-        markerId: MarkerId('2'),
-        position: LatLng(30.502058784166292, 32.260417069270844),
-      ),
-      Marker(
-        infoWindow: InfoWindow(title: "hello id", snippet: "hello world"),
-        icon: BitmapDescriptor.bytes(image),
-        markerId: MarkerId('3'),
-        position: LatLng(30.502058784166292, 32.360417069270844),
-      ),
-    };
+    // mapController.setMapStyle(mapstyle);
+    // image = await function("assets/images/marker.png", 40);
+    // markers = {
+    //   Marker(
+    //     infoWindow: InfoWindow(title: "hello id", snippet: "hello world"),
+    //     icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
+    //     markerId: MarkerId('1'),
+    //     position: LatLng(30.602058784166292, 32.260417069270844),
+    //   ),
+    //   Marker(
+    //     infoWindow: InfoWindow(title: "hello id", snippet: "hello world"),
+    //     icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
+    //     markerId: MarkerId('2'),
+    //     position: LatLng(30.502058784166292, 32.260417069270844),
+    //   ),
+    //   Marker(
+    //     infoWindow: InfoWindow(title: "hello id", snippet: "hello world"),
+    //     icon: BitmapDescriptor.bytes(image),
+    //     markerId: MarkerId('3'),
+    //     position: LatLng(30.502058784166292, 32.360417069270844),
+    //   ),
+    // };
+    location = Location();
+    await checkandrequestlocationpermission();
     setState(() {});
   }
 
@@ -64,27 +68,17 @@ class _googlemapwidgetState extends State<googlemapwidget> {
       children: [
         GoogleMap(
           mapType: MapType.normal,
-          circles: {
-            Circle(
-              fillColor: Colors.blueAccent.withOpacity(0.3),
 
-              strokeColor: Colors.blueAccent,
-              strokeWidth: 2,
-              radius: 100,
-              center: LatLng(30.602058784166292, 32.260417069270844),
-              circleId: CircleId('1'),
-            ),
-          },
           zoomControlsEnabled: false,
           markers: markers,
           // mapType: MapType.hybrid,
           onMapCreated: (controller) {
             mapController = controller;
-            // initstyle();
+            initstyle();
           },
           initialCameraPosition: CameraPosition(
-            target: LatLng(30.602058784166292, 32.260417069270844),
-            zoom: 13,
+            target: LatLng(21, 12),
+            zoom: 17,
           ),
         ),
         // Positioned(
@@ -106,6 +100,51 @@ class _googlemapwidgetState extends State<googlemapwidget> {
         //   ),
         // ),
       ],
+    );
+  }
+
+  Future<void> checkandrequestlocationpermission() async {
+    bool _serviceEnable;
+    PermissionStatus _permissionGranted;
+    LocationData _locationData;
+    _serviceEnable = await location.serviceEnabled();
+    if (!_serviceEnable) {
+      _serviceEnable = await location.requestService();
+
+      if (!_serviceEnable) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location service disabled')),
+        );
+        return;
+      }
+    }
+    _permissionGranted = await location.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await location.requestPermission();
+      if (_permissionGranted != PermissionStatus.granted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location permission denied')),
+        );
+
+        return;
+      }
+    }
+    _locationData = await location.getLocation();
+    markers.add(
+      Marker(
+        markerId: const MarkerId('current_location'),
+        position: LatLng(_locationData.latitude!, _locationData.longitude!),
+        infoWindow: const InfoWindow(title: 'Current Location'),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      ),
+    );
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(_locationData.latitude!, _locationData.longitude!),
+          zoom: 13,
+        ),
+      ),
     );
   }
 }
