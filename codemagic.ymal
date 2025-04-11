@@ -6,17 +6,24 @@ workflows:
       flutter: stable
       xcode: latest
     scripts:
+      # 1. تثبيت الـ dependencies لمشروع Flutter
       - name: Install Flutter dependencies
         script: |
           flutter pub get
+          
+      # 2. بناء التطبيق لنسخة iOS بدون توقيع
       - name: Build iOS (Debug, No Signing)
         script: |
           flutter build ios --debug --no-codesign
+          
+      # 3. تحويل الـ Runner.app إلى .ipa
       - name: Create IPA manually
         script: |
           cd build/ios/iphoneos
           mkdir Payload
           cp -r Runner.app Payload/
           zip -r Runner.ipa Payload
+          
+    # 4. تحديد ملفات التنزيل (Artifacts)
     artifacts:
       - build/ios/iphoneos/Runner.ipa
